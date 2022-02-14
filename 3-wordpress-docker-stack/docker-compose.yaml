@@ -1,0 +1,43 @@
+version: "3.7"
+
+services:
+  database:
+    image: mysql:5.7
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: 1
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password #MYSQL_PASSWORD ün değerini secrets dizinin altındaki mysql_password dosyasından okuyacak.
+    secrets:
+      - mysql_password
+    networks:
+      - wpover
+
+  wordpress:
+    image: wordpress:latest
+    depends_on:
+      - database
+    environment:
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD_FILE: /run/secrets/mysql_password
+      WORDPRESS_DB_HOST: database:3306
+      WORDPRESS_DB_NAME: wordpress
+    secrets:
+      - mysql_password
+    networks:
+      - wpover
+    ports:
+    - "8080:80"
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+
+networks:
+  wpover:
+    driver: overlay
+
+secrets:
+  mysql_password:
+    file: mysqlpass.txt #mysqlpass metin dosyasındaki değeri okuyup mysql_password secret ına atayacak.
